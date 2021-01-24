@@ -325,11 +325,12 @@ class GymEnv(Environment):
             elif any(package in getattr(self._env.spec, 'entry_point', '')
                      for package in KNOWN_GYM_NOT_CLOSE_VIEWER):
                 if hasattr(self._env, 'viewer'):
-                    from gym.envs.classic_control.rendering import (
-                        Viewer, SimpleImageViewer)
-                    if (isinstance(self._env.viewer,
-                                   (SimpleImageViewer, Viewer))):
-                        self._env.viewer.close()
+                    pass
+                    # from gym.envs.classic_control.rendering import (
+                        # Viewer, SimpleImageViewer)
+                    # if (isinstance(self._env.viewer,
+                                   # (SimpleImageViewer, Viewer))):
+                        # self._env.viewer.close()
 
     def __getstate__(self):
         """See `Object.__getstate__.
