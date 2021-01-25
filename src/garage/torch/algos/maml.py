@@ -452,6 +452,39 @@ class MAML:
         """
         return copy.deepcopy(self._policy)
 
+    def get_adapted_test_policy(self, policy, episodes):
+        """ Given an exploration policy and episodes from a test task sampler,
+        adapts the policy using the same parameters (e.g. num_grad_updates) as
+        in training. Return adapted policy and revert parameters.
+
+        Args:
+            policy (Policy): The exploration policy.
+            episodes (EpisodeBatch): The sampled test episodes to adapt to.
+
+        Returns:
+            Policy:  The adapted policy.
+        """
+        original_policy = self.get_exploration_policy()
+        self._inner_algo.policy = policy
+        self._inner_optimizer.module = policy
+
+        for j in range(self._num_grad_updates + 1):
+            batch_samples = self._process_samples(episodes)
+            # The last iteration does only sampling but no adapting
+            if j < self._num_grad_updates:
+                # A grad need to be kept for the next grad update
+                # Except for the last grad update
+                require_grad = j < self._num_grad_updates - 1
+                self._adapt(batch_samples, set_grad=require_grad)
+
+        adapted_policy = copy.deepcopy(self._policy)
+
+        self._policy = original_policy
+        self._inner_algo.policy = original_policy
+        self._inner_optimizer.module = original_policy
+
+        return adapted_policy
+
     def adapt_policy(self, exploration_policy, exploration_episodes):
         """Adapt the policy by one gradient steps for a task.
 
