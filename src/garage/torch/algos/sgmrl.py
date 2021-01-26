@@ -190,10 +190,7 @@ class SGMRL:
             # SG-MRL specific
             with torch.set_grad_enabled(False):
                 adapted_reward = last_update.rewards.detach().clone().numpy()  # note that we treat it as a constant
-                j_tilde = 0
-                for path in adapted_reward:
-                    j_tilde += discount_cumsum(path, 
-                                               self._inner_algo.discount)[0]
+                j_tilde = np.mean([discount_cumsum(path, self._inner_algo.discount)[0] for path in adapted_reward])
 
             # SG-MRL specific
             loss += j_tilde * init_log_probs
