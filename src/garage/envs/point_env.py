@@ -23,8 +23,8 @@ class PointEnv(Environment):
     """
 
     def __init__(self,
-                 goal=np.array((1., 1.), dtype=np.float32),
-                 arena_size=0.5.,
+                 goal=np.array((0.3, -0.3), dtype=np.float32),
+                 arena_size=0.5,
                  done_bonus=0.,
                  never_done=False,
                  max_episode_length=math.inf):
