@@ -24,7 +24,7 @@ class PointEnv(Environment):
 
     def __init__(self,
                  goal=np.array((1., 1.), dtype=np.float32),
-                 arena_size=5.,
+                 arena_size=0.5.,
                  done_bonus=0.,
                  never_done=False,
                  max_episode_length=math.inf):
@@ -195,7 +195,7 @@ class PointEnv(Environment):
                 point in 2D space.
 
         """
-        goals = np.random.uniform(-2, 2, size=(num_tasks, 2))
+        goals = np.random.uniform(-self._arena_size, self._arena_size, size=(num_tasks, 2))
         tasks = [{'goal': goal} for goal in goals]
         return tasks
 
