@@ -2,6 +2,7 @@
 # yapf: disable
 import collections
 import copy
+import pdb
 
 from dowel import tabular
 import numpy as np
@@ -149,6 +150,72 @@ class SGMRL:
 
         return average_return
 
+    def _compute_meta_loss(self, all_samples, all_params, set_grad=True):
+        """Compute loss to meta-optimize.
+
+        Args:
+            all_samples (list[list[_MAMLEpisodeBatch]]): A two
+                dimensional list of _MAMLEpisodeBatch of size
+                [meta_batch_size * (num_grad_updates + 1)]
+            all_params (list[dict]): A list of named parameter dictionaries.
+                Each dictionary contains key value pair of names (str) and
+                parameters (torch.Tensor).
+            set_grad (bool): Whether to enable gradient calculation or not.
+
+        Returns:
+            torch.Tensor: Calculated mean value of loss.
+
+        """
+        theta = dict(self._policy.named_parameters())
+        old_theta = dict(self._old_policy.named_parameters())
+
+        losses = []
+        for task_samples, task_params in zip(all_samples, all_params):
+            with torch.set_grad_enabled(set_grad):
+                # SG-MRL specific
+                # pylint: disable=protected-access
+                initial_samples = task_samples[0]
+                init_log_probs = self._inner_algo._compute_log_probs(*initial_samples[1:])
+
+            for i in range(self._num_grad_updates):
+                require_grad = i < self._num_grad_updates - 1 or set_grad
+                self._adapt(task_samples[i], set_grad=require_grad)
+
+            update_module_params(self._old_policy, task_params)
+            with torch.set_grad_enabled(set_grad):
+                # pylint: disable=protected-access
+                last_update = task_samples[-1]
+                loss = self._inner_algo._compute_loss(*last_update[1:])
+
+            # SG-MRL specific
+            with torch.set_grad_enabled(False):
+                adapted_reward = last_update.rewards.detach().clone().numpy()  # note that we treat it as a constant
+                j_tilde = 0
+                for path in adapted_reward:
+                    j_tilde += discount_cumsum(path, 
+                                               self._inner_algo.discount)[0]
+
+            # SG-MRL specific
+            loss += j_tilde * init_log_probs
+
+            losses.append(loss)
+
+            update_module_params(self._policy, theta)
+            update_module_params(self._old_policy, old_theta)
+
+        return torch.stack(losses).mean()
+
+    def _meta_optimize(self, all_samples, all_params):
+        if isinstance(self._meta_optimizer, ConjugateGradientOptimizer):
+            self._meta_optimizer.step(
+                f_loss=lambda: self._compute_meta_loss(
+                    all_samples, all_params, set_grad=False),
+                f_constraint=lambda: self._compute_kl_constraint(
+                    all_samples, all_params))
+        else:
+            self._meta_optimizer.step(lambda: self._compute_meta_loss(
+                all_samples, all_params, set_grad=False))
+
     def _train_value_function(self, paths):
         """Train the value function.
 
@@ -237,54 +304,6 @@ class SGMRL:
 
         with torch.set_grad_enabled(set_grad):
             self._inner_optimizer.step()
-
-    def _meta_optimize(self, all_samples, all_params):
-        if isinstance(self._meta_optimizer, ConjugateGradientOptimizer):
-            self._meta_optimizer.step(
-                f_loss=lambda: self._compute_meta_loss(
-                    all_samples, all_params, set_grad=False),
-                f_constraint=lambda: self._compute_kl_constraint(
-                    all_samples, all_params))
-        else:
-            self._meta_optimizer.step(lambda: self._compute_meta_loss(
-                all_samples, all_params, set_grad=False))
-
-    def _compute_meta_loss(self, all_samples, all_params, set_grad=True):
-        """Compute loss to meta-optimize.
-
-        Args:
-            all_samples (list[list[_MAMLEpisodeBatch]]): A two
-                dimensional list of _MAMLEpisodeBatch of size
-                [meta_batch_size * (num_grad_updates + 1)]
-            all_params (list[dict]): A list of named parameter dictionaries.
-                Each dictionary contains key value pair of names (str) and
-                parameters (torch.Tensor).
-            set_grad (bool): Whether to enable gradient calculation or not.
-
-        Returns:
-            torch.Tensor: Calculated mean value of loss.
-
-        """
-        theta = dict(self._policy.named_parameters())
-        old_theta = dict(self._old_policy.named_parameters())
-
-        losses = []
-        for task_samples, task_params in zip(all_samples, all_params):
-            for i in range(self._num_grad_updates):
-                require_grad = i < self._num_grad_updates - 1 or set_grad
-                self._adapt(task_samples[i], set_grad=require_grad)
-
-            update_module_params(self._old_policy, task_params)
-            with torch.set_grad_enabled(set_grad):
-                # pylint: disable=protected-access
-                last_update = task_samples[-1]
-                loss = self._inner_algo._compute_loss(*last_update[1:])
-            losses.append(loss)
-
-            update_module_params(self._policy, theta)
-            update_module_params(self._old_policy, old_theta)
-
-        return torch.stack(losses).mean()
 
     def _compute_kl_constraint(self, all_samples, all_params, set_grad=True):
         """Compute KL divergence.

@@ -453,3 +453,32 @@ class VPG(RLAlgorithm):
         log_likelihoods = self.policy(obs)[0].log_prob(actions)
 
         return log_likelihoods * advantages
+
+    def _compute_log_probs(self, obs, actions, rewards, valids, baselines):
+        r"""Compute log likelihoods
+
+        Notes: P is the maximum episode length (self.max_episode_length)
+
+        Args:
+            obs (torch.Tensor): Observation from the environment
+                with shape :math:`(N, P, O*)`.
+            actions (torch.Tensor): Actions fed to the environment
+                with shape :math:`(N, P, A*)`.
+            rewards (torch.Tensor): Acquired rewards
+                with shape :math:`(N, P)`.
+            valids (list[int]): Numbers of valid steps in each episode
+            baselines (torch.Tensor): Value function estimation at each step
+                with shape :math:`(N, P)`.
+
+        Returns:
+            torch.Tensor: log likelihood (float).
+
+        """
+        obs_flat = torch.cat(filter_valids(obs, valids))
+        actions_flat = torch.cat(filter_valids(actions, valids))
+        advantages_flat = self._compute_advantage(rewards, valids, baselines)
+
+        log_likelihoods = self.policy(obs_flat)[0].log_prob(actions_flat)
+
+        return log_likelihoods.mean()
+
