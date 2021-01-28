@@ -8,17 +8,12 @@ env:
   OWNER: "rlworkgroup"
   DOCKER_CACHE_REPO: "garage-ci"
   MJKEY: ${{ secrets.MJKEY }}
+  CI_USER: rlworkgroupbot
 
 on:
   schedule:
     - cron: '0 9 * * *'
   push:
-    branches:
-      - 'release-2020.06'
-    tags:
-      - 'v2020.06.[0-9]+'
-      - 'v2020.06.[0-9]+rc[0-9]'
-  pull_request:
     branches:
       - 'release-2020.06'
 
@@ -34,7 +29,7 @@ jobs:
         with:
           ref: release-2020.06
       - name: Login to GitHub Package Registry
-        run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u gitanshu --password-stdin
+        run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u ${CI_USER} --password-stdin
       - name: Build Docker container
         run: |
           docker build . \
@@ -61,7 +56,7 @@ jobs:
         ref: release-2020.06
     - name: Login to GitHub Package Registry
       if: github.event_name == 'pull_request'
-      run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u gitanshu --password-stdin
+      run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u ${CI_USER} --password-stdin
     - name: Pull from cache (GitHub Package Registry)
       if: github.event_name == 'pull_request'
       run: docker pull "docker.pkg.github.com/${OWNER}/${DOCKER_CACHE_REPO}/${DOCKER_TAG}"
@@ -89,7 +84,7 @@ jobs:
       with:
         ref: release-2020.06
     - name: Login to GitHub Package Registry
-      run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u gitanshu --password-stdin
+      run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u ${CI_USER} --password-stdin
     - name: Pull from cache (GitHub Package Registry)
       run: docker pull "docker.pkg.github.com/${OWNER}/${DOCKER_CACHE_REPO}/${DOCKER_TAG}"
     - name: Tag docker image
@@ -131,7 +126,7 @@ jobs:
       with:
         ref: release-2020.06
     - name: Login to GitHub Package Registry
-      run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u gitanshu --password-stdin
+      run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u ${CI_USER} --password-stdin
     - name: Pull from cache (GitHub Package Registry)
       run: docker pull "docker.pkg.github.com/${OWNER}/${DOCKER_CACHE_REPO}/${DOCKER_TAG}"
     - name: Tag docker image
@@ -172,7 +167,7 @@ jobs:
       with:
         ref: release-2020.06
     - name: Login to GitHub Package Registry
-      run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u gitanshu --password-stdin
+      run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u ${CI_USER} --password-stdin
     - name: Pull from cache (GitHub Package Registry)
       run: docker pull "docker.pkg.github.com/${OWNER}/${DOCKER_CACHE_REPO}/${DOCKER_TAG}"
     - name: Tag docker image
@@ -212,7 +207,7 @@ jobs:
       with:
         ref: release-2020.06
     - name: Login to GitHub Package Registry
-      run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u gitanshu --password-stdin
+      run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u ${CI_USER} --password-stdin
     - name: Pull from cache (GitHub Package Registry)
       run: docker pull "docker.pkg.github.com/${OWNER}/${DOCKER_CACHE_REPO}/${DOCKER_TAG}"
     - name: Tag docker image
@@ -253,7 +248,7 @@ jobs:
         with:
           ref: release-2020.06
       - name: Login to GitHub Package Registry
-        run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u gitanshu --password-stdin
+        run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u ${CI_USER} --password-stdin
       - name: Pull from cache (GitHub Package Registry)
         run: docker pull "docker.pkg.github.com/${OWNER}/${DOCKER_CACHE_REPO}/${DOCKER_TAG}"
       - name: Tag docker image
@@ -283,7 +278,7 @@ jobs:
         with:
           ref: release-2020.06
       - name: Login to GitHub Package Registry
-        run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u gitanshu --password-stdin
+        run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u ${CI_USER} --password-stdin
       - name: Pull from cache (GitHub Package Registry)
         run: docker pull "docker.pkg.github.com/${OWNER}/${DOCKER_CACHE_REPO}/${DOCKER_TAG}"
       - name: Tag docker image
@@ -326,7 +321,7 @@ jobs:
         with:
           ref: release-2020.06
       - name: Login to GitHub Package Registry
-        run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u gitanshu --password-stdin
+        run: echo ${{ secrets.CI_REGISTRY_TOKEN }} | docker login docker.pkg.github.com -u ${CI_USER} --password-stdin
       - name: Pull from cache (GitHub Package Registry)
         run: docker pull "docker.pkg.github.com/${OWNER}/${DOCKER_CACHE_REPO}/${DOCKER_TAG}"
       - name: Tag docker image
