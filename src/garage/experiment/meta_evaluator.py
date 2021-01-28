@@ -86,8 +86,8 @@ class MetaEvaluator:
             policy = algo.get_exploration_policy()
             eps = EpisodeBatch.concatenate(*[
                 algo._sampler.obtain_samples(self._eval_itr, 1,
-                                            policy,
-                                            env_up)
+                                             policy,
+                                             env_up)
                 for _ in range(self._n_exploration_eps)
             ])
             adapted_policy = algo.get_adapted_test_policy(policy, eps)
@@ -116,3 +116,5 @@ class MetaEvaluator:
                 getattr(algo, 'discount', 1.0),
                 name_map=name_map)
         self._eval_itr += 1
+
+        return adapted_episodes
